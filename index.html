@@ -29,12 +29,34 @@
         td.editable-content.day-0 { color: #e74c3c !important; }
         td.editable-content.day-6 { color: #3498db !important; }
 
-
         .schedule-table tbody tr:nth-child(even):not(.month-header) { background-color: #f9f9f9; }
         .editable-content { cursor: pointer; }
-        .editable-cell input { width: 90%; padding: 5px; box-sizing: border-box; border: 1px solid #3498db; border-radius: 4px; text-align: inherit; }
+        
+        /* 텍스트/날짜 입력 필드 스타일 */
+        .editable-cell input[type="text"], .editable-cell input[type="date"] { 
+            width: 90%; padding: 5px; box-sizing: border-box; 
+            border: 1px solid #3498db; border-radius: 4px; text-align: inherit; 
+        }
         .date-input-field input[type="date"] { width: 130px; min-height: 20px; }
 
+        /* 시간 수정 시, 시간 필드 분리 레이아웃 */
+        .time-input-fields {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+        .time-input-fields input[type="time"] {
+            width: 70px; /* 시간 입력 필드 너비 조정 */
+            padding: 5px;
+            border: 1px solid #3498db;
+            border-radius: 4px;
+        }
+        .time-input-fields span {
+            font-weight: bold;
+            color: #555;
+        }
+        
         /* 설정 패널 스타일 */
         .setting-panel {
             padding: 20px;
@@ -202,7 +224,7 @@
 
     <div class="setting-panel">
         <div class="input-group">
-            <label for="total-classes">총 회차 수 / 수업 시작일</label>
+            <label for="total-classes">**총 회차 수 (절대 고정)** / 수업 시작일</label>
             <input type="number" id="total-classes" value="35" min="1" max="100" style="margin-right: 10px;">
             <input type="date" id="start-date">
         </div>
@@ -248,7 +270,7 @@
             - **[생성/업데이트] 버튼은 잠금 해제 후 사용 가능합니다.** <span style="font-weight: bold; color: #e74c3c;">(실수 방지)</span><br>
             - **날짜를 수정**하면 요일은 자동 반영됩니다. <span style="color: #3498db;">(날짜: YYYY.MM.DD 형식)</span><br>
             - **토요일은 파란색, 일요일은 빨간색**으로 표시됩니다.<br>
-            - **DELETE 키**를 누르면 해당 회차가 **영구 삭제**됩니다.
+            - **총 회차 수(Total Classes)는 절대 변하지 않습니다.**
         </div>
     </div>
 
@@ -271,6 +293,7 @@
 
 <script>
     const tableBody = document.getElementById('schedule-body');
+    const totalClassesInput = document.getElementById('total-classes');
     let currentEditingCell = null;
     const currentYear = new Date().getFullYear();
     const dayNamesKo = ['일', '월', '화', '수', '목', '금', '토'];
@@ -386,12 +409,12 @@
 
 
     // ----------------------------------------------------
-    // [A] 핵심 기능: 일정 생성 로직
+    // [A] 핵심 기능: 일정 생성 로직 (총 회차 수 고정)
     // ----------------------------------------------------
     window.generateSchedule = () => {
         if (isLocked) return; 
         
-        const totalClasses = parseInt(document.getElementById('total-classes').value);
+        const totalClasses = parseInt(totalClassesInput.value);
         const startDateStr = document.getElementById('start-date').value;
         
         const selectedCheckboxes = document.querySelectorAll('#day-selection-group input[type="checkbox"]:checked');
@@ -416,7 +439,11 @@
         
         const finalTimeMap = {};
         for (const dayIndex in timeMap) {
-            finalTimeMap[dayIndex] = `${timeMap[dayIndex].start} - ${timeMap[dayIndex].end}`;
+            finalTimeMap[dayIndex] = {
+                display: `${timeMap[dayIndex].start} - ${timeMap[dayIndex].end}`,
+                start: timeMap[dayIndex].start,
+                end: timeMap[dayIndex].end
+            };
         }
 
 
@@ -451,7 +478,7 @@
                 
                 if (day === nextTargetDayInSequence) {
                     
-                    const classTime = finalTimeMap[day];
+                    const timeData = finalTimeMap[day];
                     
                     const year = currentDate.getFullYear();
                     const month = String(currentDate.getMonth() + 1).padStart(2, '0');
@@ -464,12 +491,15 @@
                     
                     const newRow = document.createElement('tr');
                     newRow.setAttribute('data-date', dateDisplay); 
-                    newRow.classList.add(`day-${day}`); // 요일 클래스 (tr)
+                    newRow.setAttribute('data-class-no', classCount); // 회차 번호 고정
+                    newRow.setAttribute('data-start-time', timeData.start); // 시작 시간 저장
+                    newRow.setAttribute('data-end-time', timeData.end); // 종료 시간 저장
+                    newRow.classList.add(`day-${day}`); 
                     newRow.innerHTML = `
                         <td>${String(classCount).padStart(2, '0')}</td>
                         <td class="editable-content date-cell day-${day}" data-col="date">${dateDisplay}</td>
                         <td data-col="day" class="day-${day}">${dayOfWeek}</td> 
-                        <td class="editable-content day-${day}" data-col="time">${classTime}</td>
+                        <td class="editable-content time-cell day-${day}" data-col="time">${timeData.display}</td>
                     `;
                     newRows.push(newRow);
 
@@ -488,10 +518,11 @@
     };
     
     // ----------------------------------------------------
-    // [B] 테이블 편집/정렬/갱신 로직 (요일 클래스 업데이트 포함)
+    // [B] 테이블 편집/정렬/갱신 로직
     // ----------------------------------------------------
     
     const parseDate = (dateStr) => {
+        // 날짜 형식 YYYY.MM.DD 또는 MM.DD 를 Date 객체로 변환
         const parts = dateStr.split('.');
         if (parts.length === 3) { return new Date(`${parts[0]}-${parts[1]}-${parts[2]}`); }
         if (parts.length === 2) { return new Date(`${currentYear}-${parts[0]}-${parts[1]}`); }
@@ -499,12 +530,14 @@
     };
 
     const formatDateForInput = (dateStr) => {
+        // YYYY.MM.DD 형식을 Date input의 YYYY-MM-DD 형식으로 변환
         const parts = dateStr.split('.');
         if (parts.length === 3) { return `${parts[0]}-${parts[1]}-${parts[2]}`; }
         return '';
     };
 
     const formatDateForDisplay = (dateInput) => {
+        // YYYY-MM-DD 형식을 YYYY.MM.DD 형식으로 변환 (테이블 표시용)
         const parts = dateInput.split('-');
         if (parts.length === 3) { return `${parts[0]}.${parts[1]}.${parts[2]}`; }
         return dateInput;
@@ -523,25 +556,33 @@
         return days[dateObj.getDay()];
     };
 
+    // 회차 번호는 고정하고, 날짜 순으로 정렬하며 월 헤더를 추가/제거
     const sortTable = () => {
         const rows = Array.from(tableBody.querySelectorAll('tr:not(.month-header)'));
         
         rows.sort((a, b) => {
             const dateA = parseDate(a.getAttribute('data-date'));
             const dateB = parseDate(b.getAttribute('data-date'));
+            // 날짜가 같으면 회차 번호(data-class-no)로 정렬
+            if (dateA - dateB === 0) {
+                return parseInt(a.getAttribute('data-class-no')) - parseInt(b.getAttribute('data-class-no'));
+            }
             return dateA - dateB;
         });
 
         tableBody.innerHTML = ''; 
         
         let currentYearMonth = null;
-        let currentClassNo = 0; 
         
         rows.forEach(row => {
             const dateStr = row.getAttribute('data-date');
             const dateObj = parseDate(dateStr);
             
-            if (!dateObj) return;
+            // 날짜 정보가 유효하지 않으면 월 헤더 추가 없이 바로 행 추가
+            if (!dateObj) {
+                 tableBody.appendChild(row);
+                 return;
+            }
 
             const year = dateObj.getFullYear();
             const month = dateObj.getMonth() + 1;
@@ -555,45 +596,63 @@
                 header.innerHTML = `<td colspan="4">🗓️ ${year}년 ${month}월</td>`;
                 tableBody.appendChild(header);
             }
-
-            currentClassNo++;
-            row.querySelector('td:first-child').textContent = String(currentClassNo).padStart(2, '0');
-
+            
+            // 회차 번호(row.cells[0])는 data-class-no에 저장된 고정된 값을 그대로 사용
             tableBody.appendChild(row);
         });
     };
 
+    // 입력 필드의 내용 저장
     const saveContent = (inputElement) => {
         const parentCell = inputElement.closest('td');
         const row = parentCell.closest('tr');
-        let newContent = inputElement.value.trim();
 
         if (parentCell.classList.contains('date-cell')) {
-            const dateDisplay = formatDateForDisplay(newContent);
-            const dayOfWeek = getDayOfWeek(newContent);
+            const newDateValue = inputElement.value.trim();
             
-            // 변경된 날짜의 요일 인덱스 (0~6) 계산
-            const newDateObj = new Date(newContent);
-            const dayIndex = newDateObj.getDay();
+            // 유효한 날짜가 아니면 저장하지 않음
+            if (!newDateValue || isNaN(new Date(newDateValue))) {
+                 // 원래 내용으로 복원
+                parentCell.innerHTML = row.getAttribute('data-date'); 
+            } else {
+                const dateDisplay = formatDateForDisplay(newDateValue);
+                const dayOfWeek = getDayOfWeek(newDateValue);
+                
+                const newDateObj = new Date(newDateValue);
+                const dayIndex = newDateObj.getDay();
 
-            // 기존 요일 클래스 제거 후 새 요일 클래스 추가
-            const cells = row.querySelectorAll('td');
-            cells.forEach(cell => {
-                cell.classList.remove('day-0', 'day-6', 'day-1', 'day-2', 'day-3', 'day-4', 'day-5');
-                cell.classList.add(`day-${dayIndex}`);
-            });
-            row.classList.remove('day-0', 'day-6', 'day-1', 'day-2', 'day-3', 'day-4', 'day-5');
-            row.classList.add(`day-${dayIndex}`);
-            
-            parentCell.innerHTML = dateDisplay;
-            row.setAttribute('data-date', dateDisplay); 
-            
-            const dayCell = row.cells[2];
-            dayCell.innerHTML = dayOfWeek;
+                // 요일 클래스 업데이트
+                const cells = row.querySelectorAll('td');
+                cells.forEach(cell => {
+                    cell.className = cell.className.replace(/day-\d/g, ''); 
+                    cell.classList.add(`day-${dayIndex}`);
+                });
+                row.className = row.className.replace(/day-\d/g, '');
+                row.classList.add(`day-${dayIndex}`);
+                
+                parentCell.innerHTML = dateDisplay;
+                row.setAttribute('data-date', dateDisplay); 
+                
+                row.cells[2].innerHTML = dayOfWeek; // 요일 업데이트
 
-            sortTable();
+                sortTable(); // 날짜 변경 시 정렬 재실행
+            }
+        
+        } else if (parentCell.classList.contains('time-cell')) {
+            const startTimeInput = parentCell.querySelector('[data-time-type="start"]');
+            const endTimeInput = parentCell.querySelector('[data-time-type="end"]');
+
+            const newStartTime = startTimeInput.value.trim();
+            const newEndTime = endTimeInput.value.trim();
+            
+            // 시간 데이터 저장 및 표시 업데이트
+            row.setAttribute('data-start-time', newStartTime);
+            row.setAttribute('data-end-time', newEndTime);
+            parentCell.innerHTML = `${newStartTime} - ${newEndTime}`;
+
         } else {
-            parentCell.innerHTML = newContent;
+            // 기타 텍스트 필드 처리
+            parentCell.innerHTML = inputElement.value.trim();
         }
 
         parentCell.classList.remove('editable-cell', 'date-input-field');
@@ -603,51 +662,87 @@
     tableBody.addEventListener('click', (event) => {
         const cell = event.target.closest('.editable-content');
         
-        if (!cell || cell.querySelector('input')) return;
+        if (!cell || cell.querySelector('input') || cell.querySelector('.time-input-fields')) return;
         
-        if (currentEditingCell) saveContent(currentEditingCell.querySelector('input'));
+        if (currentEditingCell) {
+            // 현재 편집 중인 셀이 있으면 저장 (이전 셀 저장)
+            const inputToSave = currentEditingCell.querySelector('input[type="date"], input[type="text"]');
+            const timeInputsToSave = currentEditingCell.querySelector('.time-input-fields input');
+            if (inputToSave) {
+                 saveContent(inputToSave);
+            } else if (timeInputsToSave) {
+                // 시간 필드의 경우, 첫 번째 필드를 기준으로 저장 함수 호출
+                saveContent(timeInputsToSave);
+            }
+        }
 
         const originalContent = cell.innerHTML.trim();
+        const row = cell.closest('tr');
         cell.classList.add('editable-cell'); 
         
         let inputHTML;
         if (cell.classList.contains('date-cell')) {
-            const dateValue = formatDateForInput(originalContent);
+            // 날짜 수정
+            const dateValue = formatDateForInput(row.getAttribute('data-date'));
             inputHTML = `<input type="date" value="${dateValue}" />`;
             cell.classList.add('date-input-field'); 
-        } else {
-            const isTimeCell = cell.getAttribute('data-col') === 'time';
-            // 시간 셀을 위한 입력 필드에 10분 단위 step을 적용합니다. (600초)
-            const stepAttr = isTimeCell ? ' step="600"' : ''; 
+        
+        } else if (cell.classList.contains('time-cell')) {
+            // 시간 수정 (시작 시간 - 종료 시간 분리)
+            const currentStart = row.getAttribute('data-start-time');
+            const currentEnd = row.getAttribute('data-end-time');
             
-            // 입력창의 타입은 텍스트로 유지하여 사용자가 직접 입력하는 유연성을 확보했습니다.
-            // 다만, 일부 모바일 환경에서는 input type="time"이 강제될 수 있습니다.
-            inputHTML = `<input type="text" value="${originalContent.replace(/"/g, '&quot;')}" ${stepAttr} />`;
+            inputHTML = `
+                <div class="time-input-fields">
+                    <input type="time" value="${currentStart}" data-time-type="start" required step="600" />
+                    <span>-</span>
+                    <input type="time" value="${currentEnd}" data-time-type="end" required step="600" />
+                </div>
+            `;
+        } else {
+            // 기타 텍스트 필드 
+            inputHTML = `<input type="text" value="${originalContent.replace(/"/g, '&quot;')}" />`;
         }
 
         cell.innerHTML = inputHTML;
-        const input = cell.querySelector('input');
-        input.focus();
-        currentEditingCell = cell;
+        
+        let input = cell.querySelector('input');
+        
+        if (input) {
+            input.focus();
+            currentEditingCell = cell;
 
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault(); 
-                saveContent(input);
-                input.blur();
-            }
-        });
-        input.addEventListener('blur', () => saveContent(input));
+            const inputsToListen = cell.querySelectorAll('input');
+            
+            inputsToListen.forEach(i => {
+                // Enter 키 저장 로직
+                i.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault(); 
+                        saveContent(i);
+                        i.blur();
+                    }
+                });
+                // Blur 이벤트는 다른 셀 클릭/Enter로만 저장하도록 단순화
+            });
+        }
     });
 
     document.addEventListener('keydown', (event) => {
         if (currentEditingCell && event.key === 'Delete') {
             const rowToDelete = currentEditingCell.closest('tr');
-            const 회차번호 = rowToDelete.querySelector('td').textContent;
+            const classNo = rowToDelete.getAttribute('data-class-no');
             
-            if (confirm(`정말로 회차 ${회차번호}을(를) 삭제하시겠습니까?`)) {
+            // 총 회차 수 ${totalClassesInput.value}은(는) 절대 고정 유지됨을 명시
+            if (confirm(`정말로 회차 #${classNo}을(를) 삭제하시겠습니까? (총 회차 수 ${totalClassesInput.value}은(는) 절대 고정 유지됩니다. 해당 번호는 빈 칸이 됩니다.)`)) {
+                
+                // 1. 삭제
                 rowToDelete.remove();
                 currentEditingCell = null; 
+                
+                // 2. 총 회차 수는 그대로 유지
+
+                // 3. 정렬 및 월 헤더 업데이트
                 sortTable(); 
                 event.preventDefault(); 
             }
