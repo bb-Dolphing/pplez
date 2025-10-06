@@ -5,195 +5,195 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>간편 설정 및 잠금 수업 일정표</title>
     <style>
-    /* 기본 스타일 */
-    body { font-family: 'Malgun Gothic', '맑은 고딕', Arial, sans-serif; margin: 20px; background-color: #f8f8f8; }
-    .schedule-container { max-width: 750px; margin: 0 auto; background-color: #fff; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); border-radius: 10px; overflow: hidden; }
-    h2 { text-align: center; color: #2c3e50; padding: 20px 0; margin: 0; border-bottom: 2px solid #eee; }
-    .schedule-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    .schedule-table th, .schedule-table td { padding: 12px 10px; text-align: center; border-bottom: 1px solid #eee; }
-    .schedule-table th { background-color: #ecf0f1; color: #34495e; font-weight: bold; position: sticky; top: 0; z-index: 10; cursor: default; }
-    
-    /* 회차, 요일 셀 (배경 있는 셀) */
-    .schedule-table td:first-child, .schedule-table td:nth-child(3) { 
-        background-color: #f0f4f7;
-        font-weight: bold; 
-        cursor: default; 
-        color: #555;
-    }
-    
-    /* 주말 색상 강조 */
-    .day-0 { color: #e74c3c !important; font-weight: bold; } /* 일요일: 빨간색 */
-    .day-6 { color: #3498db !important; font-weight: bold; } /* 토요일: 파란색 */
+        /* 기본 스타일 */
+        body { font-family: 'Malgun Gothic', '맑은 고딕', Arial, sans-serif; margin: 20px; background-color: #f8f8f8; }
+        .schedule-container { max-width: 750px; margin: 0 auto; background-color: #fff; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); border-radius: 10px; overflow: hidden; }
+        h2 { text-align: center; color: #2c3e50; padding: 20px 0; margin: 0; border-bottom: 2px solid #eee; }
+        .schedule-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        .schedule-table th, .schedule-table td { padding: 12px 10px; text-align: center; border-bottom: 1px solid #eee; }
+        .schedule-table th { background-color: #ecf0f1; color: #34495e; font-weight: bold; position: sticky; top: 0; z-index: 10; cursor: default; }
+        
+        /* 회차, 요일 셀 (배경 있는 셀) */
+        .schedule-table td:first-child, .schedule-table td:nth-child(3) { 
+            background-color: #f0f4f7;
+            font-weight: bold; 
+            cursor: default; 
+            color: #555;
+        }
+        
+        /* 주말 색상 강조 */
+        .day-0 { color: #e74c3c !important; font-weight: bold; } /* 일요일: 빨간색 */
+        .day-6 { color: #3498db !important; font-weight: bold; } /* 토요일: 파란색 */
 
-    /* 날짜/시간 셀의 주말 색상 (editable-content) */
-    td.editable-content.day-0 { color: #e74c3c !important; }
-    td.editable-content.day-6 { color: #3498db !important; }
+        /* 날짜/시간 셀의 주말 색상 (editable-content) */
+        td.editable-content.day-0 { color: #e74c3c !important; }
+        td.editable-content.day-6 { color: #3498db !important; }
 
 
-    .schedule-table tbody tr:nth-child(even):not(.month-header) { background-color: #f9f9f9; }
-    .editable-content { cursor: pointer; }
-    .editable-cell input { width: 90%; padding: 5px; box-sizing: border-box; border: 1px solid #3498db; border-radius: 4px; text-align: inherit; }
-    .date-input-field input[type="date"] { width: 130px; min-height: 20px; }
+        .schedule-table tbody tr:nth-child(even):not(.month-header) { background-color: #f9f9f9; }
+        .editable-content { cursor: pointer; }
+        .editable-cell input { width: 90%; padding: 5px; box-sizing: border-box; border: 1px solid #3498db; border-radius: 4px; text-align: inherit; }
+        .date-input-field input[type="date"] { width: 130px; min-height: 20px; }
 
-    /* 설정 패널 스타일 */
-    .setting-panel {
-        padding: 20px;
-        background-color: #e0f7fa;
-        border-bottom: 2px solid #00bcd4;
-    }
-    .input-group { margin-bottom: 15px; }
-    .input-group label { font-weight: bold; color: #00796b; display: block; margin-bottom: 5px; }
-    .input-group input[type="number"], .input-group input[type="date"] {
-        padding: 8px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        width: calc(50% - 10px);
-        box-sizing: border-box;
-    }
+        /* 설정 패널 스타일 */
+        .setting-panel {
+            padding: 20px;
+            background-color: #e0f7fa;
+            border-bottom: 2px solid #00bcd4;
+        }
+        .input-group { margin-bottom: 15px; }
+        .input-group label { font-weight: bold; color: #00796b; display: block; margin-bottom: 5px; }
+        .input-group input[type="number"], .input-group input[type="date"] {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: calc(50% - 10px);
+            box-sizing: border-box;
+        }
 
-    /* 요일 선택 */
-    .day-selection-group { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; }
-    .day-selection-group label {
-        background-color: #fff;
-        padding: 8px 12px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        cursor: pointer;
-        transition: all 0.2s;
-        font-weight: normal;
-    }
-    .day-selection-group input[type="checkbox"] { display: none; }
-    .day-selection-group input[type="checkbox"]:checked + label {
-        background-color: #00bcd4;
-        color: white;
-        border-color: #0097a7;
-    }
+        /* 요일 선택 */
+        .day-selection-group { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; }
+        .day-selection-group label {
+            background-color: #fff;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: normal;
+        }
+        .day-selection-group input[type="checkbox"] { display: none; }
+        .day-selection-group input[type="checkbox"]:checked + label {
+            background-color: #00bcd4;
+            color: white;
+            border-color: #0097a7;
+        }
 
-    /* 요일별 시간 컨테이너 */
-    #day-time-inputs {
-        padding: 10px;
-        border: 1px solid #b2ebf2;
-        background-color: #ffffff;
-        border-radius: 4px;
-    }
-    #day-time-inputs .time-input-row {
-        display: flex;
-        align-items: center;
-        margin-bottom: 8px;
-        gap: 10px;
-    }
-    #day-time-inputs .time-input-row label {
-        font-weight: normal;
-        min-width: 70px;
-        color: #333;
-    }
-    #day-time-inputs .time-input-row .time-fields {
-        display: flex;
-        gap: 10px;
-        flex-grow: 1;
-    }
-    #day-time-inputs .time-input-row .time-fields input[type="time"] {
-        padding: 6px;
-        border: 1px solid #ddd;
-        border-radius: 3px;
-        max-width: 120px;
-        flex-grow: 1;
-    }
-    
-    /* 버튼 그룹 스타일 */
-    .button-group {
-        display: flex;
-        gap: 10px;
-        margin-top: 10px;
-        align-items: center;
-    }
-    .setting-panel button {
-        padding: 10px;
-        font-size: 1em;
-        cursor: pointer;
-        border: none;
-        border-radius: 4px;
-        transition: background-color 0.2s;
-    }
-    #generate-schedule {
-        flex-grow: 1;
-        background-color: #00bcd4;
-        color: white;
-    }
-    #generate-schedule:disabled {
-        background-color: #ccc;
-        cursor: not-allowed;
-    }
-    #lock-toggle {
-        width: 120px;
-        background-color: #f39c12;
-        color: white;
-    }
-    #lock-toggle.unlocked {
-            background-color: #2ecc71;
-    }
+        /* 요일별 시간 컨테이너 */
+        #day-time-inputs {
+            padding: 10px;
+            border: 1px solid #b2ebf2;
+            background-color: #ffffff;
+            border-radius: 4px;
+        }
+        #day-time-inputs .time-input-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            gap: 10px;
+        }
+        #day-time-inputs .time-input-row label {
+            font-weight: normal;
+            min-width: 70px;
+            color: #333;
+        }
+        #day-time-inputs .time-input-row .time-fields {
+            display: flex;
+            gap: 10px;
+            flex-grow: 1;
+        }
+        #day-time-inputs .time-input-row .time-fields input[type="time"] {
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            max-width: 120px;
+            flex-grow: 1;
+        }
+        
+        /* 버튼 그룹 스타일 */
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            align-items: center;
+        }
+        .setting-panel button {
+            padding: 10px;
+            font-size: 1em;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        #generate-schedule {
+            flex-grow: 1;
+            background-color: #00bcd4;
+            color: white;
+        }
+        #generate-schedule:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        #lock-toggle {
+            width: 120px;
+            background-color: #f39c12;
+            color: white;
+        }
+        #lock-toggle.unlocked {
+             background-color: #2ecc71;
+        }
 
-    /* 정보 아이콘 및 툴팁 스타일 */
-    .info-tooltip-container {
-        position: relative; 
-        display: flex;
-        align-items: center;
-    }
+        /* 정보 아이콘 및 툴팁 스타일 */
+        .info-tooltip-container {
+            position: relative; 
+            display: flex;
+            align-items: center;
+        }
 
-    .info-icon {
-        font-size: 1.2em;
-        font-weight: bold;
-        color: #3498db;
-        cursor: pointer;
-        border: 1px solid #3498db;
-        border-radius: 50%;
-        width: 20px;
-        height: 20px;
-        line-height: 18px;
-        text-align: center;
-        display: inline-block;
-        user-select: none;
-        margin-right: 5px;
-    }
+        .info-icon {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #3498db;
+            cursor: pointer;
+            border: 1px solid #3498db;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            line-height: 18px;
+            text-align: center;
+            display: inline-block;
+            user-select: none;
+            margin-right: 5px;
+        }
 
-    .info-tooltip-text {
-        visibility: hidden;
-        width: 280px;
-        background-color: #333;
-        color: #fff;
-        text-align: left;
-        border-radius: 6px;
-        padding: 10px;
-        position: absolute;
-        z-index: 9999; /* Z-Index를 높여 다른 요소 위에 표시 */
-        bottom: 145%; /* 위치를 더 위로 조정 */
-        left: 50%;
-        margin-left: -140px; 
-        opacity: 0;
-        transition: opacity 0.3s, visibility 0.3s;
-        font-size: 0.85em;
-        line-height: 1.4;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    }
+        .info-tooltip-text {
+            visibility: hidden;
+            width: 280px;
+            background-color: #333;
+            color: #fff;
+            text-align: left;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 9999; 
+            bottom: 145%;
+            left: 50%;
+            margin-left: -140px; 
+            opacity: 0;
+            transition: opacity 0.3s, visibility 0.3s;
+            font-size: 0.85em;
+            line-height: 1.4;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
 
-    .info-tooltip-text::after {
-        content: "";
-        position: absolute;
-        top: 100%;
-        left: 50%;
-        margin-left: -5px;
-        border-width: 5px;
-        border-style: solid;
-        border-color: #333 transparent transparent transparent;
-    }
+        .info-tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #333 transparent transparent transparent;
+        }
 
-    .info-tooltip-text.visible {
-        visibility: visible;
-        opacity: 1;
-    }
+        .info-tooltip-text.visible {
+            visibility: visible;
+            opacity: 1;
+        }
 
-    #guide { text-align: left; margin-bottom: 10px; font-size: 0.9em; color: #34495e; padding-left: 10px; border-left: 3px solid #f39c12; padding: 5px 0 5px 10px; margin-left: 10px; }
-</style>
+        #guide { text-align: left; margin-bottom: 10px; font-size: 0.9em; color: #34495e; padding-left: 10px; border-left: 3px solid #f39c12; padding: 5px 0 5px 10px; margin-left: 10px; }
+    </style>
 </head>
 <body>
 
@@ -221,7 +221,7 @@
         </div>
 
         <div class="input-group">
-            <label>요일별 수업 시간 (시작 시간 - 종료 시간, 30분 단위)</label>
+            <label>요일별 수업 시간 (시작 시간 - 종료 시간, **10분 단위**)</label>
             <div id="day-time-inputs">
                 </div>
         </div>
@@ -370,9 +370,9 @@
                 row.innerHTML = `
                     <label>(${dayName})요일:</label>
                     <div class="time-fields">
-                        <input type="time" data-day="${dayIndex}" data-type="start" value="${existingStart}" required step="1800">
+                        <input type="time" data-day="${dayIndex}" data-type="start" value="${existingStart}" required step="600">
                         <span>-</span>
-                        <input type="time" data-day="${dayIndex}" data-type="end" value="${existingEnd}" required step="1800">
+                        <input type="time" data-day="${dayIndex}" data-type="end" value="${existingEnd}" required step="600">
                     </div>
                 `;
                 timeInputContainer.appendChild(row);
@@ -617,11 +617,11 @@
             cell.classList.add('date-input-field'); 
         } else {
             const isTimeCell = cell.getAttribute('data-col') === 'time';
-            // 시간 셀을 위한 입력 필드에 30분 단위 step을 적용합니다.
-            const stepAttr = isTimeCell ? ' step="1800"' : ''; 
+            // 시간 셀을 위한 입력 필드에 10분 단위 step을 적용합니다. (600초)
+            const stepAttr = isTimeCell ? ' step="600"' : ''; 
             
-            // 시간 셀인 경우 type="time"을 사용자가 사용하던 형식이 string일 때는 input type="text"
-            // 여기서는 모든 editable cell을 type="text"로 통일하되, 시간 셀에만 step을 적용하여 유연성을 유지
+            // 입력창의 타입은 텍스트로 유지하여 사용자가 직접 입력하는 유연성을 확보했습니다.
+            // 다만, 일부 모바일 환경에서는 input type="time"이 강제될 수 있습니다.
             inputHTML = `<input type="text" value="${originalContent.replace(/"/g, '&quot;')}" ${stepAttr} />`;
         }
 
