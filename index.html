@@ -3,126 +3,197 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>간편 설정 및 일정 잠금 수업 일정표</title>
+    <title>간편 설정 및 잠금 수업 일정표</title>
     <style>
-        /* CSS는 요일별 시간 입력 부분이 변경되었습니다. */
-        body { font-family: 'Malgun Gothic', '맑은 고딕', Arial, sans-serif; margin: 20px; background-color: #f8f8f8; }
-        .schedule-container { max-width: 700px; margin: 0 auto; background-color: #fff; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); border-radius: 10px; overflow: hidden; }
-        h2 { text-align: center; color: #2c3e50; padding: 20px 0; margin: 0; border-bottom: 2px solid #eee; }
-        .schedule-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        .schedule-table th, .schedule-table td { padding: 12px 10px; text-align: center; border-bottom: 1px solid #eee; }
-        .schedule-table th { background-color: #ecf0f1; color: #34495e; font-weight: bold; position: sticky; top: 0; z-index: 10; cursor: default; }
-        
-        /* 요일 및 회차 열 스타일 (수정 불가) */
-        .schedule-table td:first-child, .schedule-table td:nth-child(3) { 
-            background-color: #f0f4f7;
-            font-weight: bold; 
-            cursor: default; 
-            color: #555;
-        }
+    /* 기본 스타일 */
+    body { font-family: 'Malgun Gothic', '맑은 고딕', Arial, sans-serif; margin: 20px; background-color: #f8f8f8; }
+    .schedule-container { max-width: 750px; margin: 0 auto; background-color: #fff; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); border-radius: 10px; overflow: hidden; }
+    h2 { text-align: center; color: #2c3e50; padding: 20px 0; margin: 0; border-bottom: 2px solid #eee; }
+    .schedule-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .schedule-table th, .schedule-table td { padding: 12px 10px; text-align: center; border-bottom: 1px solid #eee; }
+    .schedule-table th { background-color: #ecf0f1; color: #34495e; font-weight: bold; position: sticky; top: 0; z-index: 10; cursor: default; }
+    
+    /* 회차, 요일 셀 (배경 있는 셀) */
+    .schedule-table td:first-child, .schedule-table td:nth-child(3) { 
+        background-color: #f0f4f7;
+        font-weight: bold; 
+        cursor: default; 
+        color: #555;
+    }
+    
+    /* 주말 색상 강조 */
+    .day-0 { color: #e74c3c !important; font-weight: bold; } /* 일요일: 빨간색 */
+    .day-6 { color: #3498db !important; font-weight: bold; } /* 토요일: 파란색 */
 
-        /* 설정 패널 스타일 */
-        .setting-panel {
-            padding: 20px;
-            background-color: #e0f7fa;
-            border-bottom: 2px solid #00bcd4;
-        }
-        .input-group { margin-bottom: 15px; }
-        .input-group label { font-weight: bold; color: #00796b; display: block; margin-bottom: 5px; }
-        .input-group input[type="number"], .input-group input[type="date"] {
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            width: calc(50% - 10px);
-            box-sizing: border-box;
-        }
-        .day-selection-group { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; }
-        .day-selection-group label {
-            background-color: #fff;
-            padding: 8px 12px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-weight: normal;
-        }
-        .day-selection-group input[type="checkbox"] { display: none; }
-        .day-selection-group input[type="checkbox"]:checked + label {
-            background-color: #00bcd4;
-            color: white;
-            border-color: #0097a7;
-        }
+    /* 날짜/시간 셀의 주말 색상 (editable-content) */
+    td.editable-content.day-0 { color: #e74c3c !important; }
+    td.editable-content.day-6 { color: #3498db !important; }
 
-        /* 요일별 시간 컨테이너 스타일 - 시간 입력 필드 너비 조정 */
-        #day-time-inputs {
-            padding: 10px;
-            border: 1px solid #b2ebf2;
-            background-color: #ffffff;
-            border-radius: 4px;
-        }
-        #day-time-inputs .time-input-row {
-            display: flex;
-            align-items: center;
-            margin-bottom: 8px;
-            gap: 5px; /* 시간 필드 사이 간격 추가 */
-        }
-        #day-time-inputs .time-input-row label {
-            font-weight: normal;
-            min-width: 60px;
-            color: #333;
-        }
-        #day-time-inputs .time-input-row .time-fields {
-            display: flex;
-            gap: 10px;
-            flex-grow: 1;
-        }
-        #day-time-inputs .time-input-row .time-fields input[type="time"] {
-            padding: 6px;
-            border: 1px solid #ddd;
-            border-radius: 3px;
-            max-width: 120px;
-            flex-grow: 1;
-        }
-        
-        /* 버튼 그룹 스타일 (이전과 동일) */
-        .button-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        .setting-panel button {
-            padding: 10px;
-            font-size: 1em;
-            cursor: pointer;
-            border: none;
-            border-radius: 4px;
-            transition: background-color 0.2s;
-        }
-        #generate-schedule {
-            flex-grow: 1;
-            background-color: #00bcd4;
-            color: white;
-        }
-        #generate-schedule:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
-        #lock-toggle {
-            width: 120px;
-            background-color: #f39c12;
-            color: white;
-        }
-        #lock-toggle.unlocked {
-             background-color: #2ecc71;
-        }
 
-        /* 기타 스타일 */
-        .editable-content { cursor: pointer; }
-        .schedule-table tbody tr:nth-child(even):not(.month-header) { background-color: #f9f9f9; }
-        .editable-cell input { width: 90%; padding: 5px; box-sizing: border-box; border: 1px solid #3498db; border-radius: 4px; text-align: inherit; }
-        .date-input-field input[type="date"] { width: 130px; min-height: 20px; }
-        #guide { text-align: left; margin-bottom: 10px; font-size: 0.9em; color: #34495e; padding-left: 10px; border-left: 3px solid #f39c12; padding: 5px 0 5px 10px; margin-left: 10px; }
-    </style>
+    .schedule-table tbody tr:nth-child(even):not(.month-header) { background-color: #f9f9f9; }
+    .editable-content { cursor: pointer; }
+    .editable-cell input { width: 90%; padding: 5px; box-sizing: border-box; border: 1px solid #3498db; border-radius: 4px; text-align: inherit; }
+    .date-input-field input[type="date"] { width: 130px; min-height: 20px; }
+
+    /* 설정 패널 스타일 */
+    .setting-panel {
+        padding: 20px;
+        background-color: #e0f7fa;
+        border-bottom: 2px solid #00bcd4;
+    }
+    .input-group { margin-bottom: 15px; }
+    .input-group label { font-weight: bold; color: #00796b; display: block; margin-bottom: 5px; }
+    .input-group input[type="number"], .input-group input[type="date"] {
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        width: calc(50% - 10px);
+        box-sizing: border-box;
+    }
+
+    /* 요일 선택 */
+    .day-selection-group { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; }
+    .day-selection-group label {
+        background-color: #fff;
+        padding: 8px 12px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-weight: normal;
+    }
+    .day-selection-group input[type="checkbox"] { display: none; }
+    .day-selection-group input[type="checkbox"]:checked + label {
+        background-color: #00bcd4;
+        color: white;
+        border-color: #0097a7;
+    }
+
+    /* 요일별 시간 컨테이너 */
+    #day-time-inputs {
+        padding: 10px;
+        border: 1px solid #b2ebf2;
+        background-color: #ffffff;
+        border-radius: 4px;
+    }
+    #day-time-inputs .time-input-row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+        gap: 10px;
+    }
+    #day-time-inputs .time-input-row label {
+        font-weight: normal;
+        min-width: 70px;
+        color: #333;
+    }
+    #day-time-inputs .time-input-row .time-fields {
+        display: flex;
+        gap: 10px;
+        flex-grow: 1;
+    }
+    #day-time-inputs .time-input-row .time-fields input[type="time"] {
+        padding: 6px;
+        border: 1px solid #ddd;
+        border-radius: 3px;
+        max-width: 120px;
+        flex-grow: 1;
+    }
+    
+    /* 버튼 그룹 스타일 */
+    .button-group {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+        align-items: center;
+    }
+    .setting-panel button {
+        padding: 10px;
+        font-size: 1em;
+        cursor: pointer;
+        border: none;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+    }
+    #generate-schedule {
+        flex-grow: 1;
+        background-color: #00bcd4;
+        color: white;
+    }
+    #generate-schedule:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+    }
+    #lock-toggle {
+        width: 120px;
+        background-color: #f39c12;
+        color: white;
+    }
+    #lock-toggle.unlocked {
+            background-color: #2ecc71;
+    }
+
+    /* 정보 아이콘 및 툴팁 스타일 */
+    .info-tooltip-container {
+        position: relative; 
+        display: flex;
+        align-items: center;
+    }
+
+    .info-icon {
+        font-size: 1.2em;
+        font-weight: bold;
+        color: #3498db;
+        cursor: pointer;
+        border: 1px solid #3498db;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        line-height: 18px;
+        text-align: center;
+        display: inline-block;
+        user-select: none;
+        margin-right: 5px;
+    }
+
+    .info-tooltip-text {
+        visibility: hidden;
+        width: 280px;
+        background-color: #333;
+        color: #fff;
+        text-align: left;
+        border-radius: 6px;
+        padding: 10px;
+        position: absolute;
+        z-index: 9999; /* Z-Index를 높여 다른 요소 위에 표시 */
+        bottom: 145%; /* 위치를 더 위로 조정 */
+        left: 50%;
+        margin-left: -140px; 
+        opacity: 0;
+        transition: opacity 0.3s, visibility 0.3s;
+        font-size: 0.85em;
+        line-height: 1.4;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .info-tooltip-text::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: #333 transparent transparent transparent;
+    }
+
+    .info-tooltip-text.visible {
+        visibility: visible;
+        opacity: 1;
+    }
+
+    #guide { text-align: left; margin-bottom: 10px; font-size: 0.9em; color: #34495e; padding-left: 10px; border-left: 3px solid #f39c12; padding: 5px 0 5px 10px; margin-left: 10px; }
+</style>
 </head>
 <body>
 
@@ -150,12 +221,21 @@
         </div>
 
         <div class="input-group">
-            <label>요일별 수업 시간 (시작 시간 - 종료 시간)</label>
+            <label>요일별 수업 시간 (시작 시간 - 종료 시간, 30분 단위)</label>
             <div id="day-time-inputs">
                 </div>
         </div>
         
         <div class="button-group">
+            <div class="info-tooltip-container">
+                <span id="lock-info-icon" class="info-icon" onclick="toggleTooltip(event)">ⓘ</span>
+                <div id="lock-info-tooltip" class="info-tooltip-text">
+                    * **일정 잠금/해제 기능 안내** *<br>
+                    테이블 내용을 실수로 덮어쓰지 않도록 **잠금 상태**가 기본입니다.<br><br>
+                    [🔒 잠금 해제]를 누르면 일정을 새로 만들거나 변경할 수 있습니다.
+                </div>
+            </div>
+            
             <button id="lock-toggle" onclick="toggleLock()">🔒 잠금 해제</button>
             <button id="generate-schedule" onclick="generateSchedule()" disabled>일정 생성/업데이트</button>
         </div>
@@ -166,7 +246,8 @@
     <div style="padding: 10px 0;">
         <div id="guide">
             - **[생성/업데이트] 버튼은 잠금 해제 후 사용 가능합니다.** <span style="font-weight: bold; color: #e74c3c;">(실수 방지)</span><br>
-            - **날짜와 시간**만 수정할 수 있으며, **요일은 자동 반영되어 수정 불가**입니다.<br>
+            - **날짜를 수정**하면 요일은 자동 반영됩니다. <span style="color: #3498db;">(날짜: YYYY.MM.DD 형식)</span><br>
+            - **토요일은 파란색, 일요일은 빨간색**으로 표시됩니다.<br>
             - **DELETE 키**를 누르면 해당 회차가 **영구 삭제**됩니다.
         </div>
     </div>
@@ -188,9 +269,6 @@
     </div>
 </div>
 
-### 2. JavaScript (시간 데이터 처리 로직 변경)
-
-```javascript
 <script>
     const tableBody = document.getElementById('schedule-body');
     let currentEditingCell = null;
@@ -212,7 +290,26 @@
     });
 
     // ----------------------------------------------------
-    // [UI/보호 로직] 잠금 상태 토글 (이전과 동일)
+    // [UI 로직] 정보 아이콘 클릭 토글
+    // ----------------------------------------------------
+    window.toggleTooltip = (event) => {
+        const tooltip = document.getElementById('lock-info-tooltip');
+        tooltip.classList.toggle('visible');
+        event.stopPropagation();
+    };
+
+    // 툴팁 외부 클릭 시 툴팁 닫기
+    document.addEventListener('click', (event) => {
+        const tooltip = document.getElementById('lock-info-tooltip');
+        const icon = document.getElementById('lock-info-icon');
+        
+        if (tooltip && !tooltip.contains(event.target) && !icon.contains(event.target)) {
+            tooltip.classList.remove('visible');
+        }
+    });
+
+    // ----------------------------------------------------
+    // [UI/보호 로직] 잠금 상태 토글
     // ----------------------------------------------------
     let isLocked = true;
 
@@ -244,7 +341,7 @@
     };
 
     // ----------------------------------------------------
-    // [UI 로직] 요일 체크박스 상태에 따라 시간 입력 필드를 동적으로 생성/제거 (이전과 동일)
+    // [UI 로직] 요일 체크박스 상태에 따라 시간 입력 필드를 동적으로 생성/제거
     // ----------------------------------------------------
     const updateTimeInputs = () => {
         const timeInputContainer = document.getElementById('day-time-inputs');
@@ -273,9 +370,9 @@
                 row.innerHTML = `
                     <label>(${dayName})요일:</label>
                     <div class="time-fields">
-                        <input type="time" data-day="${dayIndex}" data-type="start" value="${existingStart}" required>
+                        <input type="time" data-day="${dayIndex}" data-type="start" value="${existingStart}" required step="1800">
                         <span>-</span>
-                        <input type="time" data-day="${dayIndex}" data-type="end" value="${existingEnd}" required>
+                        <input type="time" data-day="${dayIndex}" data-type="end" value="${existingEnd}" required step="1800">
                     </div>
                 `;
                 timeInputContainer.appendChild(row);
@@ -289,7 +386,7 @@
 
 
     // ----------------------------------------------------
-    // [A] 핵심 기능: 일정 생성 로직 (날짜 형식 YYYY.MM.DD로 변경)
+    // [A] 핵심 기능: 일정 생성 로직
     // ----------------------------------------------------
     window.generateSchedule = () => {
         if (isLocked) return; 
@@ -311,6 +408,7 @@
             const timeValue = input.value.trim();
 
             if (!timeMap[dayIndex]) timeMap[dayIndex] = {};
+
             timeMap[dayIndex][timeType] = timeValue;
 
             if (!timeValue) missingTime = true;
@@ -345,7 +443,7 @@
 
         while (classCount < totalClasses) {
             
-            const day = currentDate.getDay();
+            const day = currentDate.getDay(); // 0(일) ~ 6(토)
             
             if (currentDate >= initialDate && targetDays.includes(day)) {
                 
@@ -355,7 +453,6 @@
                     
                     const classTime = finalTimeMap[day];
                     
-                    // 📌 변경: 날짜 형식을 YYYY.MM.DD로 설정
                     const year = currentDate.getFullYear();
                     const month = String(currentDate.getMonth() + 1).padStart(2, '0');
                     const date = String(currentDate.getDate()).padStart(2, '0');
@@ -366,12 +463,13 @@
                     classCount++;
                     
                     const newRow = document.createElement('tr');
-                    newRow.setAttribute('data-date', dateDisplay); // data-date 속성도 YYYY.MM.DD
+                    newRow.setAttribute('data-date', dateDisplay); 
+                    newRow.classList.add(`day-${day}`); // 요일 클래스 (tr)
                     newRow.innerHTML = `
                         <td>${String(classCount).padStart(2, '0')}</td>
-                        <td class="editable-content date-cell" data-col="date">${dateDisplay}</td>
-                        <td data-col="day">${dayOfWeek}</td> 
-                        <td class="editable-content" data-col="time">${classTime}</td>
+                        <td class="editable-content date-cell day-${day}" data-col="date">${dateDisplay}</td>
+                        <td data-col="day" class="day-${day}">${dayOfWeek}</td> 
+                        <td class="editable-content day-${day}" data-col="time">${classTime}</td>
                     `;
                     newRows.push(newRow);
 
@@ -390,28 +488,24 @@
     };
     
     // ----------------------------------------------------
-    // [B] 테이블 편집/정렬/갱신 로직 (날짜 관련 함수 업데이트)
+    // [B] 테이블 편집/정렬/갱신 로직 (요일 클래스 업데이트 포함)
     // ----------------------------------------------------
     
-    // 📌 변경: data-date 속성 파싱 방식 변경 (YYYY.MM.DD)
     const parseDate = (dateStr) => {
         const parts = dateStr.split('.');
         if (parts.length === 3) { return new Date(`${parts[0]}-${parts[1]}-${parts[2]}`); }
-        // Fallback for old format if necessary, though it shouldn't be needed after full update
         if (parts.length === 2) { return new Date(`${currentYear}-${parts[0]}-${parts[1]}`); }
         return null;
     };
 
-    // 📌 변경: 날짜 입력 필드 값 (YYYY-MM-DD)
     const formatDateForInput = (dateStr) => {
-        const parts = dateStr.split('.'); // YYYY.MM.DD
+        const parts = dateStr.split('.');
         if (parts.length === 3) { return `${parts[0]}-${parts[1]}-${parts[2]}`; }
         return '';
     };
 
-    // 📌 변경: 날짜 표시 형식 (YYYY.MM.DD)
     const formatDateForDisplay = (dateInput) => {
-        const parts = dateInput.split('-'); // YYYY-MM-DD
+        const parts = dateInput.split('-');
         if (parts.length === 3) { return `${parts[0]}.${parts[1]}.${parts[2]}`; }
         return dateInput;
     };
@@ -429,7 +523,6 @@
         return days[dateObj.getDay()];
     };
 
-    // 📌 변경: 월별 헤더 표시 형식 (YYYY년 MM월)
     const sortTable = () => {
         const rows = Array.from(tableBody.querySelectorAll('tr:not(.month-header)'));
         
@@ -445,21 +538,21 @@
         let currentClassNo = 0; 
         
         rows.forEach(row => {
-            const dateStr = row.getAttribute('data-date'); // YYYY.MM.DD
+            const dateStr = row.getAttribute('data-date');
             const dateObj = parseDate(dateStr);
             
             if (!dateObj) return;
 
             const year = dateObj.getFullYear();
             const month = dateObj.getMonth() + 1;
-            const yearMonth = `${year}-${month}`; // 그룹핑 기준
+            const yearMonth = `${year}-${month}`;
 
             if (currentYearMonth !== yearMonth) {
                 currentYearMonth = yearMonth;
                 
                 const header = document.createElement('tr');
                 header.classList.add('month-header');
-                header.innerHTML = `<td colspan="4">🗓️ ${year}년 ${month}월</td>`; // 📌 변경
+                header.innerHTML = `<td colspan="4">🗓️ ${year}년 ${month}월</td>`;
                 tableBody.appendChild(header);
             }
 
@@ -476,9 +569,21 @@
         let newContent = inputElement.value.trim();
 
         if (parentCell.classList.contains('date-cell')) {
-            // newContent는 YYYY-MM-DD 형식 (type="date" input의 출력값)
-            const dateDisplay = formatDateForDisplay(newContent); // YYYY.MM.DD 형식으로 변경
-            const dayOfWeek = getDayOfWeek(newContent); // YYYY-MM-DD를 기준으로 요일 계산
+            const dateDisplay = formatDateForDisplay(newContent);
+            const dayOfWeek = getDayOfWeek(newContent);
+            
+            // 변경된 날짜의 요일 인덱스 (0~6) 계산
+            const newDateObj = new Date(newContent);
+            const dayIndex = newDateObj.getDay();
+
+            // 기존 요일 클래스 제거 후 새 요일 클래스 추가
+            const cells = row.querySelectorAll('td');
+            cells.forEach(cell => {
+                cell.classList.remove('day-0', 'day-6', 'day-1', 'day-2', 'day-3', 'day-4', 'day-5');
+                cell.classList.add(`day-${dayIndex}`);
+            });
+            row.classList.remove('day-0', 'day-6', 'day-1', 'day-2', 'day-3', 'day-4', 'day-5');
+            row.classList.add(`day-${dayIndex}`);
             
             parentCell.innerHTML = dateDisplay;
             row.setAttribute('data-date', dateDisplay); 
@@ -507,12 +612,17 @@
         
         let inputHTML;
         if (cell.classList.contains('date-cell')) {
-            // 날짜 입력 필드의 value는 YYYY-MM-DD 형식이어야 함.
-            const dateValue = formatDateForInput(originalContent); // YYYY.MM.DD -> YYYY-MM-DD
+            const dateValue = formatDateForInput(originalContent);
             inputHTML = `<input type="date" value="${dateValue}" />`;
             cell.classList.add('date-input-field'); 
         } else {
-            inputHTML = `<input type="text" value="${originalContent.replace(/"/g, '&quot;')}" />`;
+            const isTimeCell = cell.getAttribute('data-col') === 'time';
+            // 시간 셀을 위한 입력 필드에 30분 단위 step을 적용합니다.
+            const stepAttr = isTimeCell ? ' step="1800"' : ''; 
+            
+            // 시간 셀인 경우 type="time"을 사용자가 사용하던 형식이 string일 때는 input type="text"
+            // 여기서는 모든 editable cell을 type="text"로 통일하되, 시간 셀에만 step을 적용하여 유연성을 유지
+            inputHTML = `<input type="text" value="${originalContent.replace(/"/g, '&quot;')}" ${stepAttr} />`;
         }
 
         cell.innerHTML = inputHTML;
